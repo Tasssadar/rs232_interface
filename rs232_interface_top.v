@@ -40,8 +40,7 @@ module rs232_interface_top(CLOCK_50, UART_TXD, UART_RXD, LEDG, KEY);
 				tx_out <= 7'h0;
 				add <= 1;
 				send <= 2;
-			end
-			else if(send == 2 && KEY[0] == 1)
+			end else if(send == 2 && KEY[0] == 1)
 				send <= 1;
 		end
 	end
