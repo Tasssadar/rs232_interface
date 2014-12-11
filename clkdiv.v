@@ -5,7 +5,7 @@ module clkdiv(CLK, CLK_DIV);
 	wire CLK_DIV;
 
 	parameter divider = 32'd1;
-	
+
 	always @(posedge CLK)
 	begin
 		if(counter == 0)
@@ -13,6 +13,6 @@ module clkdiv(CLK, CLK_DIV);
 		else
 			counter <= counter - 1;
 	end
-	
+
 	assign CLK_DIV = (counter == 1);
 endmodule

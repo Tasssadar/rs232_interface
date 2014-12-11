@@ -11,7 +11,7 @@ module uart_tx(CLK, CLK_BAUD, TX_START, TX_DATA, TX_BUSY, TX_PIN);
 	wire tx_ready;
 	assign tx_ready = (state == 0);
 	assign TX_BUSY = ~tx_ready;
-	
+
 	always @(posedge CLK) begin
 		if(tx_ready && TX_START) begin
 			tx_buf <= TX_DATA; // load byte
