@@ -19,17 +19,22 @@ module rs232_interface_top(CLOCK_50, UART_TXD, UART_RXD, LEDG, KEY, SW);
 	reg[7:0] tx_out;
 	wire tx_busy;
 	reg tx_start;
+	wire[7:0] rx_in;
+	wire rx_recv;
 
 	reg[7:0] state;
 	reg[4:0] last_key;
 	reg[17:0] last_sw;
 
-	reg[2:0] send_st;
+	reg[1:0] send_st;
 	reg[7:0] send_cmd;
 	reg[32:0] send_data;
 	reg[7:0] send_len;
+	
+	reg[128:0] recv_buf;
+	reg[5:0] recv_cnt;
 
-	uart u(.CLOCK_50(CLOCK_50), .UART_TXD(UART_TXD), .UART_RXD(UART_RXD), .TX_DATA(tx_out), .TX_BUSY(tx_busy), .TX_START(tx_start));
+	uart u(.CLOCK_50(CLOCK_50), .UART_TXD(UART_TXD), .UART_RXD(UART_RXD), .TX_DATA(tx_out), .TX_BUSY(tx_busy), .TX_START(tx_start), .RX_DATA(rx_in), .RX_RECV(rx_recv));
 	
 	assign LEDG = state;
 
@@ -37,10 +42,22 @@ module rs232_interface_top(CLOCK_50, UART_TXD, UART_RXD, LEDG, KEY, SW);
 	begin
 		if(!tx_busy && tx_start)
 			tx_start <= 0;
+			
+		if(rx_recv) begin
+			recv_buf <= (recv_buf << 8) | rx_in;
+			recv_cnt <= recv_cnt + 1;
+		end
 
 		case(state)
 		ST_WAITING:
-			if(last_key != KEY) begin
+			if(recv_cnt > 0) begin
+				send_len <= 1;
+				send_data <= recv_buf[7:0];
+				send_cmd <= 4;
+				state <= ST_SEND;
+				recv_buf <= (recv_buf >> 8);
+				recv_cnt <= recv_cnt - 1;
+			end else if(last_key != KEY) begin
 			   send_len <= 1;
 				send_data <= ~KEY;
 				send_cmd <= CMD_KEY;
