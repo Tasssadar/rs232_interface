@@ -1,6 +1,5 @@
-module uart_tx(CLK, CLK_BAUD, TX_START, TX_DATA, TX_BUSY, TX_PIN);
+module uart_tx(CLK, TX_START, TX_DATA, TX_BUSY, TX_PIN);
 	input CLK;
-	input CLK_BAUD;
 	input TX_START;
 	input[7:0] TX_DATA;
 	output TX_PIN;
@@ -11,13 +10,17 @@ module uart_tx(CLK, CLK_BAUD, TX_START, TX_DATA, TX_BUSY, TX_PIN);
 	wire tx_ready;
 	assign tx_ready = (state == 0);
 	assign TX_BUSY = ~tx_ready;
+	wire uart_clk;
+
+	clkdiv uart_div(.CLK(CLK), .CLK_DIV(uart_clk));
+	defparam uart_div.divider = 32'd434; // 50MHz/434 == 115207,373
 
 	always @(posedge CLK) begin
 		if(tx_ready && TX_START) begin
 			tx_buf <= TX_DATA; // load byte
 			state <= 4'b0110;
-		end else if(CLK_BAUD && state >= 4'b0110) begin
-			if(state[3] & CLK_BAUD)
+		end else if(uart_clk && state >= 4'b0110) begin
+			if(state[3] & uart_clk)
 				tx_buf <= (tx_buf >> 1); // shift after each bit is sent
 			state <= state + 1;
 		end
@@ -38,6 +41,6 @@ module uart_tx(CLK, CLK_BAUD, TX_START, TX_DATA, TX_BUSY, TX_PIN);
 		endcase */
 	end
 
-	//tx is up if     idle and stop                            data
+	//tx is up if     idle         or        stop       or        data
 	assign TX_PIN = (state <= 4'b10 | state == 4'b0110) | (state[3] & tx_buf[0]);
 endmodule
